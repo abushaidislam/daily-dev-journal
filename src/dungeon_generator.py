@@ -327,20 +327,20 @@ def update_readme(dungeon_data, ascii_map, now_bst):
     }
     diff_color = diff_badge_colors.get(meta["difficulty"], "red")
 
-    readme = rf"""# 🏰 ShadowDungeon — Procedural Dungeon Crawler
+    readme = rf"""# ⚔️ RogueRealm — Procedural Roguelike Engine
 
 > An automated, algorithmic Roguelike dungeon generator powered by **GitHub Actions**, **Python (BSP & A\* Pathfinding)**, and **HTML5 Canvas**.  
 > Every 30 minutes, this repository automatically designs, verifies, and publishes a brand new solvable Roguelike level!
 
-[![Continuous Dungeon Generation](https://github.com/abushaidislam/daily-dev-journal/actions/workflows/daily_update.yml/badge.svg)](https://github.com/abushaidislam/daily-dev-journal/actions)
+[![Continuous Dungeon Generation](https://github.com/abushaidislam/roguerealm/actions/workflows/daily_update.yml/badge.svg)](https://github.com/abushaidislam/roguerealm/actions)
 [![Level](https://img.shields.io/badge/Current_Dungeon-Level_{meta['level_id']}-blueviolet.svg?style=flat-square&logo=gamepad)](levels/latest.json)
 [![Difficulty](https://img.shields.io/badge/Difficulty-{meta['difficulty']}-{diff_color}.svg?style=flat-square)](levels/latest.json)
 [![Solvability](https://img.shields.io/badge/Solvability-A*_Verified-brightgreen.svg?style=flat-square&logo=checkmarx)](levels/latest.json)
-[![Play Online](https://img.shields.io/badge/Play_in_Browser-HTML5_Canvas-blue.svg?style=for-the-badge&logo=googlechrome)](https://abushaidislam.github.io/daily-dev-journal/)
+[![Play Online](https://img.shields.io/badge/Play_in_Browser-HTML5_Canvas-blue.svg?style=for-the-badge&logo=googlechrome)](https://abushaidislam.github.io/roguerealm/)
 
 ---
 
-### 🕹️ [▶️ CLICK HERE TO PLAY THIS LEVEL ONLINE IN YOUR BROWSER](https://abushaidislam.github.io/daily-dev-journal/)
+### 🕹️ [▶️ CLICK HERE TO PLAY THIS REALM ONLINE IN YOUR BROWSER](https://abushaidislam.github.io/roguerealm/)
 *Use Arrow Keys / WASD on PC, or the Touch D-Pad on Mobile to explore, fight monsters, grab the key, and reach the exit!*
 
 ---
