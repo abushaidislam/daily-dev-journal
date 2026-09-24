@@ -1,16 +1,16 @@
-name: Daily Dev Journal Continuous Update (30m Interval)
+name: Procedural Dungeon Level Generator (30m Interval)
 
 on:
   schedule:
-    # Runs every 30 minutes (48 times a day, 1 commit per run)
+    # Runs every 30 minutes (48 automated levels generated daily)
     - cron: '*/30 * * * *'
-  workflow_dispatch: # Allows manual trigger from GitHub Actions anytime
+  workflow_dispatch: # Allows manual generation from GitHub Actions anytime
 
 permissions:
   contents: write
 
 jobs:
-  update-journal:
+  generate-dungeon:
     runs-on: ubuntu-latest
 
     steps:
@@ -30,16 +30,16 @@ jobs:
           git config --local user.name "github-actions[bot]"
           git pull --rebase origin main || true
 
-      - name: Generate Entry
+      - name: Generate Solvable Procedural Dungeon
         run: |
-          python src/generator.py
+          python src/dungeon_generator.py
 
-      - name: Commit and Push
+      - name: Commit and Push Level
         run: |
           git add -A
           if ! git diff --staged --quiet; then
             TIMESTAMP=$(date -u +'%Y-%m-%d %H:%M:%S UTC')
-            git commit -m "docs(journal): sync entry [$TIMESTAMP]"
+            git commit -m "feat(dungeon): procedural level generated [$TIMESTAMP]"
             git push origin main
           else
             echo "No changes detected."

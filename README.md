@@ -1,48 +1,81 @@
-# 🚀 Daily Dev Journal & Digest
+# 🏰 ShadowDungeon — Procedural Dungeon Crawler
 
-> An automated high-frequency developer journal & knowledge repository powered by **GitHub Actions** and **Python**.  
-> Runs continuously throughout the day (every 2 hours & on demand), curating programming insights, architecture tips, and quotes.
+> An automated, algorithmic Roguelike dungeon generator powered by **GitHub Actions**, **Python (BSP & A\* Pathfinding)**, and **HTML5 Canvas**.  
+> Every 30 minutes, this repository automatically designs, verifies, and publishes a brand new solvable Roguelike level!
 
-[![Auto Update](https://github.com/abushaidislam/daily-dev-journal/actions/workflows/daily_update.yml/badge.svg)](https://github.com/abushaidislam/daily-dev-journal/actions)
-[![Last Updated](https://img.shields.io/badge/Last_Updated-2026--09--24-brightgreen.svg?style=flat-square&logo=github)](https://github.com)
-[![Total Entries](https://img.shields.io/badge/Total_Entries-13-blueviolet.svg?style=flat-square&logo=git)](ARCHIVE.md)
-[![Frequency](https://img.shields.io/badge/Frequency-10+_Commits_Daily-orange.svg?style=flat-square)](https://github.com)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
+[![Continuous Dungeon Generation](https://github.com/abushaidislam/daily-dev-journal/actions/workflows/daily_update.yml/badge.svg)](https://github.com/abushaidislam/daily-dev-journal/actions)
+[![Level](https://img.shields.io/badge/Current_Dungeon-Level_2-blueviolet.svg?style=flat-square&logo=gamepad)](levels/latest.json)
+[![Difficulty](https://img.shields.io/badge/Difficulty-NIGHTMARE-red.svg?style=flat-square)](levels/latest.json)
+[![Solvability](https://img.shields.io/badge/Solvability-A*_Verified-brightgreen.svg?style=flat-square&logo=checkmarx)](levels/latest.json)
+[![Play Online](https://img.shields.io/badge/Play_in_Browser-HTML5_Canvas-blue.svg?style=for-the-badge&logo=googlechrome)](https://abushaidislam.github.io/daily-dev-journal/)
 
 ---
 
-### 📅 Current Edition: `September 24, 2026`
-*Last synced: **09:34:46 PM BST** (03:34:46 PM UTC) | Entry #13*
+### 🕹️ [▶️ CLICK HERE TO PLAY THIS LEVEL ONLINE IN YOUR BROWSER](https://abushaidislam.github.io/daily-dev-journal/)
+*Use Arrow Keys / WASD on PC, or the Touch D-Pad on Mobile to explore, fight monsters, grab the key, and reach the exit!*
+
+---
+
+## 🗺️ Current Dungeon: `Chamber of Whispering Runes #2`
+*Generated at: **September 24, 2026 - 09:55 PM BST** | Seed: `0x64E54D`*
+
+```text
+🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱
+🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱
+🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱
+🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱
+🧱          🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱        🧱🧱🧱🧱🧱🧱
+🧱  🐉🔥  👾🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱        🧱🧱🧱🧱🧱🧱
+🧱    🐉    🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱    🧙‍♂️  🧱🧱🧱🧱🧱🧱
+🧱        🐉🧱🧱🧱🧱🧱          🧱🧱🧱🧱        🧱🧱🧱🧱🧱🧱
+🧱  🔥🗝️                                          🧱🧱🧱🧱🧱
+🧱          🧱🧱🧱🧱🧱    👾    🧱🧱🧱🧱🧱🧱  🧱  🧱🧱🧱🧱🧱
+🧱        🧪🧱🧱🧱🧱🧱          🧱🧱🧱🧱🧱🧱  🧱  🧱🧱🧱🧱🧱
+🧱    🔥    🧱🧱🧱🧱🧱    👾🐉                      🧱🧱🧱🧱
+🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱      👾  🧱🧱🧱🧱🧱🧱  👾  💎🧱🧱🧱🧱
+🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱      💎🔥🧱🧱🧱🧱🧱🧱    🚪  🧱🧱🧱🧱
+🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱          🧱🧱🧱🧱🧱🧱        🧱🧱🧱🧱
+🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱        🧱🧱🧱🧱
+🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱
+🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱
+```
+
+### 📊 Level Statistics & Solvability
+| Metric | Value | Metric | Value |
+| :--- | :--- | :--- | :--- |
+| **Difficulty Rating** | **`NIGHTMARE`** | **Rooms Carved** | `4 Rooms` |
+| **Monsters Active** | `9 Enemies` (`👾`, `💀`, `🐉`) | **Hidden Traps** | `4 Spikes` (`🔥`) |
+| **Treasure Chests** | `2 Chests` (`💎`) | **Minimum A\* Steps** | `47 Steps to Exit` |
+
+---
+
+## 🧭 Map Legend
+* 🧙‍♂️ **Player:** Your hero. Move with `W A S D` or Arrow Keys.
+* 🗝️ **Dungeon Key:** Required to unlock the iron exit door.
+* 🚪 **Exit Gate:** Reach here alive with the key to beat the dungeon!
+* 👾 **Goblin:** Quick enemy (2 HP, 1 ATK).
+* 💀 **Skeleton:** Tough enemy (3 HP, 2 ATK).
+* 🐉 **Shadow Beast:** Lethal mini-boss (5 HP, 3 ATK).
+* 🔥 **Spike Trap:** Hidden hazard, deals 2 damage when stepped on.
+* 🧪 **Potion:** Restores 3 Health Points.
+* 💎 **Treasure:** Collect for high score!
+
+---
+
+## ⚙️ Architecture & Automated Pipeline
 
 ```mermaid
 flowchart LR
-    A[⏰ Periodic Cron / Trigger] --> B[🐍 Python Generator]
-    B --> C[🌐 Fetch Tip & Quote]
-    C --> D[📝 Update README & Archive]
-    D --> E[🟩 High-Density Green Heatmap]
+    A["⏰ Cron (Every 30m)"] --> B["🐍 Python BSP Engine"]
+    B --> C["📐 Carve Rooms & Corridors"]
+    C --> D["🧠 A* Pathfinding Solver"]
+    D --> E["💾 Save levels/latest.json"]
+    E --> F["🌐 Render to GitHub Pages Web App"]
+    F --> G["🟩 Real Daily GitHub Activity"]
 ```
 
----
-
-### 💡 Tip of the Moment
-> **Category:** `Clean Code`  
-> **Insight:**  
-> Boy Scout Rule: Always leave the code behind in a better state than you found it. Clean up a small variable name or typo every time you touch a file.
+* Levels are archived chronologically in [`levels/archive/`](levels/archive).
+* Playable web client source code lives in [`web/`](web/).
 
 ---
-
-### 💬 Quote of the Moment
-> *" Those That Know, Do. Those That Understand, Teach. "*  
-> — **Aristotle**
-
----
-
-### 📊 Repository Objectives
-- [x] Maintain high-frequency, authentic GitHub contributions (10+ commits/day).
-- [x] Continuous automated workflow execution via GitHub Actions.
-- [x] Build an extensive knowledge repository of development best practices.
-
-📜 View all historical updates in [ARCHIVE.md](file:///C:/Users/ASUS/.gemini/antigravity/scratch/daily-dev-journal/ARCHIVE.md).
-
----
-*Maintained with ❤️ by GitHub Actions Automation.*
+*Generated automatically with ❤️ by Procedural Game AI.*
