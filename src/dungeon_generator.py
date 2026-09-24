@@ -18,6 +18,7 @@ ARCHIVE_DIR = LEVELS_DIR / "archive"
 LATEST_LEVEL_FILE = LEVELS_DIR / "latest.json"
 WEB_DIR = BASE_DIR / "web"
 WEB_LEVEL_FILE = WEB_DIR / "level.json"
+ROOT_LEVEL_FILE = BASE_DIR / "level.json"
 README_FILE = BASE_DIR / "README.md"
 
 LEVELS_DIR.mkdir(parents=True, exist_ok=True)
@@ -409,10 +410,12 @@ def main():
         json.dump(dungeon_data, f, indent=2)
     print(f"Saved: {LATEST_LEVEL_FILE}")
 
-    # Copy to web/level.json for web client instant local/github-pages access
+    # Copy to web/level.json and root level.json for GitHub Pages
     with open(WEB_LEVEL_FILE, "w", encoding="utf-8") as f:
         json.dump(dungeon_data, f, indent=2)
-    print(f"Saved: {WEB_LEVEL_FILE}")
+    with open(ROOT_LEVEL_FILE, "w", encoding="utf-8") as f:
+        json.dump(dungeon_data, f, indent=2)
+    print(f"Saved: {WEB_LEVEL_FILE} and {ROOT_LEVEL_FILE}")
 
     # Save to archive
     now_utc = datetime.now(timezone.utc)

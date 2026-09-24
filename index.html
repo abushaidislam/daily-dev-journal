@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>🏰 ShadowDungeon — Procedural Web Roguelike</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏰</text></svg>">
+</head>
+<body>
+  <div class="game-wrapper">
+    <!-- Top HUD Header -->
+    <header class="hud-header">
+      <div class="hud-left">
+        <h1 class="game-title">🏰 ShadowDungeon</h1>
+        <div class="level-meta">
+          <span id="level-title">Loading dungeon...</span>
+          <span id="diff-badge" class="badge">HARD</span>
+        </div>
+      </div>
+      <div class="hud-right">
+        <div class="stat-box">
+          <span class="stat-label">HEALTH</span>
+          <span id="hp-display" class="stat-val hp-val">❤️❤️❤️❤️❤️</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-label">KEY</span>
+          <span id="key-display" class="stat-val">🔒 LOCKED</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-label">GOLD</span>
+          <span id="gold-display" class="stat-val">💎 0</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-label">TURNS</span>
+          <span id="turns-display" class="stat-val">0</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Combat & Action Log -->
+    <div id="game-log" class="game-log">
+      Dungeon entered. Explore the rooms, find the key 🗝️, and escape through the exit 🚪!
+    </div>
+
+    <!-- Main Canvas Viewport -->
+    <div class="canvas-container">
+      <canvas id="dungeonCanvas" width="960" height="576"></canvas>
+
+      <!-- Overlay for Game Over & Victory -->
+      <div id="overlay" class="overlay hidden">
+        <div class="overlay-card">
+          <h2 id="overlay-title">VICTORY!</h2>
+          <p id="overlay-msg">You unlocked the exit door and escaped the dungeon!</p>
+          <div class="overlay-stats">
+            <p>Total Turns: <strong id="overlay-turns">0</strong></p>
+            <p>Gold Looted: <strong id="overlay-gold">0</strong></p>
+          </div>
+          <button id="btn-restart" class="btn-action">Play Again</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Controls & Settings -->
+    <div class="controls-toolbar">
+      <div class="settings-group">
+        <button id="btn-fog" class="btn-tool active">👁️ Fog of War: ON</button>
+        <button id="btn-sound" class="btn-tool active">🔊 Sound: ON</button>
+        <button id="btn-reload" class="btn-tool">🔄 Reload Level</button>
+      </div>
+
+      <div class="shortcuts-legend">
+        <span>Desktop: <code>W A S D</code> / <code>Arrow Keys</code> to Move & Attack</span>
+      </div>
+    </div>
+
+    <!-- Mobile Virtual Touch D-Pad -->
+    <div class="mobile-dpad">
+      <div class="dpad-row">
+        <button class="dpad-btn" data-dir="up">⬆️</button>
+      </div>
+      <div class="dpad-row">
+        <button class="dpad-btn" data-dir="left">⬅️</button>
+        <button class="dpad-btn" data-dir="wait">🛡️</button>
+        <button class="dpad-btn" data-dir="right">➡️</button>
+      </div>
+      <div class="dpad-row">
+        <button class="dpad-btn" data-dir="down">⬇️</button>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="game-footer">
+      <p>Automated Procedural Roguelike Engine • Generated continuously via <a href="https://github.com/abushaidislam/daily-dev-journal" target="_blank">GitHub Actions</a></p>
+    </footer>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
