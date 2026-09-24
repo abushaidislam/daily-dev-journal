@@ -119,6 +119,7 @@ class RogueRealmGame {
 
     this.initDOM();
     this.bindEvents();
+    this.initFallbackLevel();
     this.loadLevel();
 
     // Start 60 FPS animation loop
@@ -603,44 +604,52 @@ class RogueRealmGame {
 
   // 60 FPS Render & Animation Loop
   loop(currentTime) {
-    const dt = (currentTime - this.lastTime) / 1000;
-    this.lastTime = currentTime;
+    try {
+      const dt = (currentTime - this.lastTime) / 1000;
+      this.lastTime = currentTime;
 
-    this.torchFlicker += dt * 3;
-    if (this.screenShake > 0) this.screenShake = Math.max(0, this.screenShake - 0.5);
-    if (this.player.hitFlash > 0) this.player.hitFlash--;
+      this.torchFlicker += dt * 3;
+      if (this.screenShake > 0) this.screenShake = Math.max(0, this.screenShake - 0.5);
+      if (this.player.hitFlash > 0) this.player.hitFlash--;
 
-    // Update floating texts
-    for (let i = this.floatingTexts.length - 1; i >= 0; i--) {
-      const ft = this.floatingTexts[i];
-      ft.y += ft.vy;
-      ft.life--;
-      ft.alpha = ft.life / 45;
-      if (ft.life <= 0) this.floatingTexts.splice(i, 1);
+      // Update floating texts
+      for (let i = this.floatingTexts.length - 1; i >= 0; i--) {
+        const ft = this.floatingTexts[i];
+        ft.y += ft.vy;
+        ft.life--;
+        ft.alpha = ft.life / 45;
+        if (ft.life <= 0) this.floatingTexts.splice(i, 1);
+      }
+
+      // Update particles
+      for (let i = this.particles.length - 1; i >= 0; i--) {
+        const p = this.particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life--;
+        p.alpha = p.life / 30;
+        if (p.life <= 0) this.particles.splice(i, 1);
+      }
+
+      // Entity hit flash decay
+      this.entities.forEach(e => {
+        if (e.hitFlash > 0) e.hitFlash--;
+      });
+
+      this.render();
+      this.renderMinimap();
+    } catch (err) {
+      console.error("Game loop error:", err);
     }
-
-    // Update particles
-    for (let i = this.particles.length - 1; i >= 0; i--) {
-      const p = this.particles[i];
-      p.x += p.vx;
-      p.y += p.vy;
-      p.life--;
-      p.alpha = p.life / 30;
-      if (p.life <= 0) this.particles.splice(i, 1);
-    }
-
-    // Entity hit flash decay
-    this.entities.forEach(e => {
-      if (e.hitFlash > 0) e.hitFlash--;
-    });
-
-    this.render();
-    this.renderMinimap();
 
     requestAnimationFrame((t) => this.loop(t));
   }
 
   render() {
+    if (!this.grid || !this.grid.length || !this.explored || !this.explored.length || !this.explored[0] || !this.visible || !this.visible.length) {
+      return;
+    }
+
     const ctx = this.ctx;
     const ts = this.tileSize;
 
@@ -661,8 +670,8 @@ class RogueRealmGame {
 
     for (let y = 0; y < this.height; y++) {
       for (let x = 0; x < this.width; x++) {
-        const isExplored = !this.fogOfWar || this.explored[y][x];
-        const isVisible = !this.fogOfWar || this.visible[y][x];
+        const isExplored = !this.fogOfWar || (this.explored[y] && this.explored[y][x]);
+        const isVisible = !this.fogOfWar || (this.visible[y] && this.visible[y][x]);
 
         if (!isExplored) continue;
 
@@ -671,19 +680,19 @@ class RogueRealmGame {
 
         if (this.grid[y][x] === 1) {
           // Wall
-          ctx.fillStyle = isVisible ? "#1e2438" : "#101422";
+          ctx.fillStyle = isVisible ? "#252e46" : "#121624";
           ctx.fillRect(posX, posY, ts, ts);
 
           // Beveled border
-          ctx.strokeStyle = isVisible ? "#2e3754" : "#171c2f";
+          ctx.strokeStyle = isVisible ? "#3b486d" : "#1a2136";
           ctx.strokeRect(posX + 0.5, posY + 0.5, ts - 1, ts - 1);
         } else {
           // Floor
-          ctx.fillStyle = isVisible ? "#111422" : "#0a0c16";
+          ctx.fillStyle = isVisible ? "#151928" : "#0c0e18";
           ctx.fillRect(posX, posY, ts, ts);
 
           // Floor stones
-          ctx.fillStyle = isVisible ? "rgba(255, 255, 255, 0.035)" : "rgba(255, 255, 255, 0.01)";
+          ctx.fillStyle = isVisible ? "rgba(255, 255, 255, 0.08)" : "rgba(255, 255, 255, 0.02)";
           ctx.fillRect(posX + ts / 2 - 1, posY + ts / 2 - 1, 2, 2);
         }
 
@@ -701,7 +710,7 @@ class RogueRealmGame {
 
     // Entities
     for (const ent of this.entities) {
-      if (!this.fogOfWar || this.visible[ent.y][ent.x]) {
+      if (!this.fogOfWar || (this.visible[ent.y] && this.visible[ent.y][ent.x])) {
         const posX = ent.x * ts;
         const posY = ent.y * ts;
 
@@ -737,10 +746,10 @@ class RogueRealmGame {
       const flicker = Math.sin(this.torchFlicker) * 4;
       const torchRadius = this.viewRadius * ts + flicker;
 
-      const grad = ctx.createRadialGradient(pxCenter, pyCenter, ts * 0.8, pxCenter, pyCenter, torchRadius);
-      grad.addColorStop(0, "rgba(251, 191, 36, 0.08)");
-      grad.addColorStop(0.65, "rgba(0, 0, 0, 0.0)");
-      grad.addColorStop(1, "rgba(7, 9, 14, 0.95)");
+      const grad = ctx.createRadialGradient(pxCenter, pyCenter, ts * 0.4, pxCenter, pyCenter, torchRadius);
+      grad.addColorStop(0, "rgba(251, 191, 36, 0.16)");
+      grad.addColorStop(0.6, "rgba(251, 191, 36, 0.04)");
+      grad.addColorStop(1, "rgba(0, 0, 0, 0)");
 
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -775,7 +784,7 @@ class RogueRealmGame {
 
   // Mini-Map Radar Rendering
   renderMinimap() {
-    if (!this.miniCtx) return;
+    if (!this.miniCtx || !this.grid || !this.grid.length || !this.explored || !this.explored.length || !this.explored[0]) return;
     const mctx = this.miniCtx;
     const w = this.minimapCanvas.width;
     const h = this.minimapCanvas.height;
@@ -787,7 +796,7 @@ class RogueRealmGame {
 
     for (let y = 0; y < this.height; y++) {
       for (let x = 0; x < this.width; x++) {
-        if (!this.fogOfWar || this.explored[y][x]) {
+        if (!this.fogOfWar || (this.explored[y] && this.explored[y][x])) {
           mctx.fillStyle = this.grid[y][x] === 1 ? "#1e2438" : "#2a3350";
           mctx.fillRect(x * sx, y * sy, sx, sy);
         }
@@ -795,11 +804,11 @@ class RogueRealmGame {
     }
 
     // Key & Exit on Radar
-    if (!this.player.hasKey && (!this.fogOfWar || this.explored[this.keyPos.y][this.keyPos.x])) {
+    if (!this.player.hasKey && (!this.fogOfWar || (this.explored[this.keyPos.y] && this.explored[this.keyPos.y][this.keyPos.x]))) {
       mctx.fillStyle = "#fbbf24";
       mctx.fillRect(this.keyPos.x * sx, this.keyPos.y * sy, sx + 1, sy + 1);
     }
-    if (!this.fogOfWar || this.explored[this.exitPos.y][this.exitPos.x]) {
+    if (!this.fogOfWar || (this.explored[this.exitPos.y] && this.explored[this.exitPos.y][this.exitPos.x])) {
       mctx.fillStyle = "#10b981";
       mctx.fillRect(this.exitPos.x * sx, this.exitPos.y * sy, sx + 1, sy + 1);
     }
