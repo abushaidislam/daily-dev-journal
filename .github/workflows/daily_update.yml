@@ -1,0 +1,43 @@
+name: Daily Dev Journal Update
+
+on:
+  schedule:
+    # Runs everyday at 00:00 UTC (06:00 AM Bangladesh Time)
+    - cron: '0 0 * * *'
+  workflow_dispatch: # Allows manual trigger from GitHub Actions UI
+
+# Permissions required to commit and push back to repository
+permissions:
+  contents: write
+
+jobs:
+  update-journal:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run Journal Generator
+        run: |
+          python src/generator.py
+
+      - name: Commit and Push Changes
+        run: |
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add -A
+          # Only commit if there are changes
+          if ! git diff --staged --quiet; then
+            git commit -m "chore(journal): automated daily update [$(date -u +'%Y-%m-%d')]"
+            git push
+          else
+            echo "No changes to commit."
+          fi
