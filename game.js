@@ -254,12 +254,19 @@ class RogueRealmGame {
     this.keyPos = data.key_location;
     this.exitPos = data.exit_door;
 
-    // Entities copy with visual metadata
-    this.entities = data.entities.map(e => ({
-      ...e,
-      maxHp: e.hp || 2,
-      hitFlash: 0
-    }));
+    // Categorize entities: only actual monsters are enemies!
+    const ENEMY_TYPES = ["goblin", "skeleton", "shadow_beast"];
+    this.entities = (data.entities || []).map(e => {
+      const isEnemy = ENEMY_TYPES.includes(e.type);
+      return {
+        ...e,
+        isEnemy,
+        hp: isEnemy ? (e.hp || 2) : 0,
+        maxHp: isEnemy ? (e.hp || 2) : 0,
+        atk: isEnemy ? (e.atk || 1) : 0,
+        hitFlash: 0
+      };
+    });
 
     // Fog of War
     this.explored = Array.from({ length: this.height }, () => Array(this.width).fill(false));
@@ -279,7 +286,7 @@ class RogueRealmGame {
 
     this.computeFOV();
     this.updateHUD();
-    this.setLog("Realm materialized. Uncover rooms, claim the key 🗝️, and conquer the exit 🚪!");
+    this.setLog("Realm materialized. Slay monsters, claim the key 🗝️, and reach the exit 🚪!");
   }
 
   initFallbackLevel() {
@@ -292,7 +299,8 @@ class RogueRealmGame {
         { id: "e1", type: "goblin", x: 7, y: 3, hp: 2, atk: 1, icon: "👾" },
         { id: "e2", type: "skeleton", x: 15, y: 8, hp: 3, atk: 2, icon: "💀" },
         { id: "p1", type: "health_potion", x: 9, y: 2, heal: 3, icon: "🧪" },
-        { id: "c1", type: "treasure_chest", x: 13, y: 6, value: 50, icon: "💎" }
+        { id: "c1", type: "treasure_chest", x: 13, y: 6, value: 50, icon: "💎" },
+        { id: "t1", type: "spike_trap", x: 11, y: 5, damage: 2, icon: "🪤" }
       ],
       grid: Array.from({ length: 14 }, (_, y) =>
         Array.from({ length: 24 }, (_, x) => (y === 0 || y === 13 || x === 0 || x === 23 ? 1 : 0))
@@ -328,13 +336,15 @@ class RogueRealmGame {
   }
 
   stepTurn(dx, dy) {
+    if (this.gameOver || this.victory) return;
+
     let actionTaken = false;
     const nx = this.player.x + dx;
     const ny = this.player.y + dy;
 
     if (dx === 0 && dy === 0) {
       actionTaken = true;
-      this.setLog("You hold your ground and catch your breath...");
+      this.setLog("🛡️ You hold your ground and catch your breath...");
       this.spawnFloatingText("WAIT", this.player.x, this.player.y, "#94a3b8");
     } else {
       if (nx < 0 || nx >= this.width || ny < 0 || ny >= this.height || this.grid[ny][nx] === 1) {
@@ -342,8 +352,8 @@ class RogueRealmGame {
         return;
       }
 
-      // Check Combat
-      const enemyIndex = this.entities.findIndex(e => e.x === nx && e.y === ny && e.hp > 0);
+      // Check Combat (ONLY against living monsters!)
+      const enemyIndex = this.entities.findIndex(e => e.isEnemy && e.x === nx && e.y === ny && e.hp > 0);
       if (enemyIndex !== -1) {
         const enemy = this.entities[enemyIndex];
         const isCrit = Math.random() < 0.25;
@@ -375,7 +385,7 @@ class RogueRealmGame {
           this.entities.splice(enemyIndex, 1);
         }
       } else {
-        // Normal Move
+        // Normal Move onto floor, pickup, or trap
         this.player.x = nx;
         this.player.y = ny;
         actionTaken = true;
@@ -399,13 +409,13 @@ class RogueRealmGame {
     const px = this.player.x;
     const py = this.player.y;
 
-    // Key
+    // Key Collection
     if (!this.player.hasKey && px === this.keyPos.x && py === this.keyPos.y) {
       this.player.hasKey = true;
       sfx.pickupKey();
       this.spawnSparkleParticles(px, py, "#fbbf24", 16);
       this.spawnFloatingText("KEY ACQUIRED! 🗝️", px, py, "#fbbf24");
-      this.setLog("🗝️ You claimed the Dungeon Key! The ancient exit gate has unlocked!");
+      this.setLog("🗝️ You picked up the Dungeon Key! The ancient exit gate 🚪 has unlocked!");
     }
 
     // Exit Door
@@ -415,20 +425,24 @@ class RogueRealmGame {
         return;
       } else {
         this.spawnFloatingText("DOOR LOCKED! 🔒", px, py, "#94a3b8");
-        this.setLog("🚪 The iron gate is sealed by blood magic! Find the key 🗝️ first.");
+        this.setLog("🚪 The iron gate is locked! Find the key 🗝️ first.");
       }
     }
 
-    // Pickups & Traps
+    // Pickups & Traps (Static, non-enemy entities)
     for (let i = this.entities.length - 1; i >= 0; i--) {
       const ent = this.entities[i];
+      if (ent.isEnemy) continue; // Monsters handled via combat bump!
+
       if (ent.x === px && ent.y === py) {
         if (ent.type === "health_potion") {
+          const oldHp = this.player.hp;
           this.player.hp = Math.min(this.player.maxHp, this.player.hp + ent.heal);
+          const healed = this.player.hp - oldHp;
           sfx.potion();
           this.spawnSparkleParticles(px, py, "#10b981", 12);
-          this.spawnFloatingText(`+${ent.heal} HP ❤️`, px, py, "#10b981");
-          this.setLog(`🧪 Quaffed crimson potion! Restored ${ent.heal} Health Points.`);
+          this.spawnFloatingText(`+${healed} HP ❤️`, px, py, "#10b981");
+          this.setLog(`🧪 Quaffed potion! Restored ${healed} Health Points.`);
           this.entities.splice(i, 1);
         } else if (ent.type === "treasure_chest") {
           this.player.gold += ent.value;
@@ -443,8 +457,9 @@ class RogueRealmGame {
           this.screenShake = 8;
           sfx.trap();
           this.spawnBloodParticles(px, py, 12);
-          this.spawnFloatingText(`-${ent.damage} HP 🔥`, px, py, "#ef4444");
-          this.setLog(`🔥 TRAP SPRUNG! Hidden iron spikes pierced you for ${ent.damage} DMG!`);
+          this.spawnFloatingText(`-${ent.damage} HP 🪤`, px, py, "#ef4444");
+          this.setLog(`🪤 TRAP SPRUNG! Hidden iron spikes pierced you for ${ent.damage} DMG!`);
+          this.entities.splice(i, 1); // Trap springs and is disarmed!
 
           if (this.player.hp <= 0) {
             this.triggerGameOver("Impaled on ancient spike traps.");
@@ -457,11 +472,12 @@ class RogueRealmGame {
 
   enemyTurn() {
     for (const enemy of this.entities) {
-      if (enemy.hp <= 0) continue;
+      // STRICT FILTER: Only living monsters move and attack!
+      if (!enemy.isEnemy || enemy.hp <= 0) continue;
 
       const dist = Math.hypot(enemy.x - this.player.x, enemy.y - this.player.y);
 
-      // Attack if adjacent
+      // Attack if directly adjacent (Manhattan distance === 1)
       if (Math.abs(enemy.x - this.player.x) + Math.abs(enemy.y - this.player.y) === 1) {
         const dmg = enemy.atk || 1;
         this.player.hp -= dmg;
@@ -470,39 +486,48 @@ class RogueRealmGame {
         sfx.hurt();
         this.spawnBloodParticles(this.player.x, this.player.y, 8);
         this.spawnFloatingText(`-${dmg} HP`, this.player.x, this.player.y, "#f43f5e");
-        this.setLog(`🩸 The ${enemy.type} slashes you for ${dmg} damage!`);
+        this.setLog(`🩸 The ${enemy.type} strikes you for ${dmg} damage!`);
 
         if (this.player.hp <= 0) {
           this.triggerGameOver(`Felled in brutal combat by ${enemy.type}.`);
           return;
         }
-      } else if (dist <= 6) {
-        // AI Hunt Step
+      } else if (dist <= 5) {
+        // Monster AI Movement: only when player is close (alert range <= 5 tiles)
+        // Goblin: 100% agile
+        // Skeleton: 75% speed
+        // Shadow Beast: 60% tank
+        const moveRate = enemy.type === "goblin" ? 1.0 : (enemy.type === "skeleton" ? 0.75 : 0.6);
+        if (Math.random() > moveRate) continue;
+
         const dx = Math.sign(this.player.x - enemy.x);
         const dy = Math.sign(this.player.y - enemy.y);
 
-        let targetX = enemy.x + dx;
-        let targetY = enemy.y;
+        const tryXFirst = Math.abs(this.player.x - enemy.x) >= Math.abs(this.player.y - enemy.y);
 
-        if (this.grid[targetY][targetX] === 0 && !this.isTileOccupied(targetX, targetY)) {
-          enemy.x = targetX;
-          enemy.y = targetY;
-        } else {
-          targetX = enemy.x;
-          targetY = enemy.y + dy;
-          if (this.grid[targetY][targetX] === 0 && !this.isTileOccupied(targetX, targetY)) {
-            enemy.x = targetX;
-            enemy.y = targetY;
-          }
+        if (tryXFirst && dx !== 0 && this.isTileWalkableForEnemy(enemy.x + dx, enemy.y)) {
+          enemy.x += dx;
+        } else if (dy !== 0 && this.isTileWalkableForEnemy(enemy.x, enemy.y + dy)) {
+          enemy.y += dy;
+        } else if (!tryXFirst && dx !== 0 && this.isTileWalkableForEnemy(enemy.x + dx, enemy.y)) {
+          enemy.x += dx;
         }
       }
     }
     this.updateHUD();
   }
 
+  isTileWalkableForEnemy(x, y) {
+    if (x < 0 || x >= this.width || y < 0 || y >= this.height) return false;
+    if (this.grid[y][x] === 1) return false; // Wall
+    if (this.player.x === x && this.player.y === y) return false; // Can't step on player, must attack
+    if (this.exitPos.x === x && this.exitPos.y === y) return false; // Don't block exit
+    return !this.entities.some(e => e.isEnemy && e.hp > 0 && e.x === x && e.y === y);
+  }
+
   isTileOccupied(x, y) {
     if (this.player.x === x && this.player.y === y) return true;
-    return this.entities.some(e => e.x === x && e.y === y && e.hp > 0);
+    return this.entities.some(e => e.isEnemy && e.x === x && e.y === y && e.hp > 0);
   }
 
   triggerVictory() {

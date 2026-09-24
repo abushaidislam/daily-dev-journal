@@ -218,7 +218,7 @@ class DungeonGenerator:
                     "type": "spike_trap",
                     "x": rx, "y": ry,
                     "damage": 2,
-                    "icon": "🔥"
+                    "icon": "🪤"
                 })
                 occupied_tiles.add((rx, ry))
 
