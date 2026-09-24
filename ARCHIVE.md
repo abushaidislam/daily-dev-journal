@@ -31,3 +31,10 @@ All historical daily updates recorded automatically.
 - **Quote:** *"I Believe In Christianity As I Believe That The Sun Has Risen: Not Only Because I See It, But Because By It I See Everything Else."* — C. S. Lewis
 
 ---
+
+### 🗓️ 2026-09-24 09:34:24 PM BST
+- **Category:** `Security`
+- **Tip:** Never commit secrets, tokens, or `.env` files to git. Use environment variables and secrets managers, and always add sensitive files to `.gitignore` first.
+- **Quote:** *"Art Is The Proper Task Of Life."* — Friedrich Nietzsche
+
+---
