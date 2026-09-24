@@ -1,15 +1,10 @@
-name: Daily Dev Journal Continuous Update
+name: Daily Dev Journal Continuous Update (30m Interval)
 
 on:
   schedule:
-    # Runs every 2 hours throughout the day (12 automated runs per day)
-    - cron: '0 */2 * * *'
-  workflow_dispatch:
-    inputs:
-      commit_count:
-        description: 'Number of commits to generate right now'
-        required: false
-        default: '10'
+    # Runs every 30 minutes (48 times a day, 1 commit per run)
+    - cron: '*/30 * * * *'
+  workflow_dispatch: # Allows manual trigger from GitHub Actions anytime
 
 permissions:
   contents: write
@@ -29,27 +24,23 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Generate Entries and Commit
+      - name: Pull Latest Changes
         run: |
           git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
+          git pull --rebase origin main || true
 
-          # Use input commit count if manually triggered, otherwise 1 on scheduled run
-          COUNT="${{ github.event.inputs.commit_count }}"
-          if [ -z "$COUNT" ]; then
-            COUNT=1
+      - name: Generate Entry
+        run: |
+          python src/generator.py
+
+      - name: Commit and Push
+        run: |
+          git add -A
+          if ! git diff --staged --quiet; then
+            TIMESTAMP=$(date -u +'%Y-%m-%d %H:%M:%S UTC')
+            git commit -m "docs(journal): sync entry [$TIMESTAMP]"
+            git push origin main
+          else
+            echo "No changes detected."
           fi
-
-          echo "Generating $COUNT commit(s)..."
-
-          for i in $(seq 1 $COUNT); do
-            python src/generator.py
-            git add -A
-            if ! git diff --staged --quiet; then
-              TIMESTAMP=$(date -u +'%Y-%m-%d %H:%M:%S UTC')
-              git commit -m "docs(journal): entry sync #$i [$TIMESTAMP]"
-            fi
-            sleep 1
-          done
-
-          git push

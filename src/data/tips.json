@@ -1,50 +1,54 @@
 [
-  {
-    "category": "Git & GitHub",
-    "tip": "Keep your commit messages in the imperative mood (e.g., 'Add user auth feature' instead of 'Added user auth feature'). It aligns with git merge/revert conventions."
-  },
-  {
-    "category": "Clean Code",
-    "tip": "Boy Scout Rule: Always leave the code behind in a better state than you found it. Clean up a small variable name or typo every time you touch a file."
-  },
-  {
-    "category": "Python",
-    "tip": "Use `dict.get('key', default_value)` instead of direct indexing `dict['key']` to avoid `KeyError` crashes in production."
-  },
-  {
-    "category": "JavaScript / TypeScript",
-    "tip": "Use Optional Chaining (`user?.profile?.avatar`) and Nullish Coalescing (`value ?? 'default'`) to prevent 'undefined is not an object' runtime crashes."
-  },
-  {
-    "category": "DevOps & Docker",
-    "tip": "Order your Dockerfile instructions from least frequently changed to most frequently changed (e.g., copy `package.json` and install dependencies before copying source code) to maximize layer caching."
-  },
-  {
-    "category": "Performance",
-    "tip": "Premature optimization is the root of all evil. Always profile and measure actual bottlenecks before rewriting working algorithms."
-  },
-  {
-    "category": "Linux & Bash",
-    "tip": "Use `Ctrl + R` in terminal to search through your shell command history backwards interactively. It saves countless minutes every day."
-  },
-  {
-    "category": "Security",
-    "tip": "Never commit secrets, tokens, or `.env` files to git. Use environment variables and secrets managers, and always add sensitive files to `.gitignore` first."
-  },
-  {
-    "category": "Web Dev",
-    "tip": "Use semantic HTML tags (`<main>`, `<article>`, `<nav>`, `<button>`) instead of nested `<div>` tags. It improves accessibility (a11y) and SEO effortlessly."
-  },
-  {
-    "category": "Database & SQL",
-    "tip": "Avoid `SELECT *` in production queries. Only query the specific columns you need to reduce network latency and memory overhead."
-  },
-  {
-    "category": "Architecture",
-    "tip": "High cohesion and loose coupling: Modules should do one thing well with minimal dependencies on other modules."
-  },
-  {
-    "category": "Git & GitHub",
-    "tip": "Use `git stash -u` to stash untracked files along with tracked changes when you need to switch branches urgently."
-  }
+  {"category": "Git & GitHub", "tip": "Keep commit messages imperative: 'Fix navigation bug' rather than 'Fixed navigation bug'."},
+  {"category": "Git & GitHub", "tip": "Use 'git commit --amend --no-edit' to quickly fold staged changes into your previous commit."},
+  {"category": "Git & GitHub", "tip": "Use 'git restore --staged <file>' to unstage files without discarding your local edits."},
+  {"category": "Git & GitHub", "tip": "Use 'git diff --stat' for a quick visual overview of changed lines and files."},
+  {"category": "Git & GitHub", "tip": "Use 'git stash -u' to stash untracked files along with tracked modified files."},
+  {"category": "Git & GitHub", "tip": "Use branch protection rules on main to require pull request reviews before merging."},
+  {"category": "Clean Code", "tip": "Boy Scout Rule: Always leave the code cleaner than you found it."},
+  {"category": "Clean Code", "tip": "Functions should do one thing, do it well, and do it only."},
+  {"category": "Clean Code", "tip": "Prefer descriptive variable names over cryptic abbreviations. 'userAccount' beats 'ua'."},
+  {"category": "Clean Code", "tip": "Avoid magic numbers. Replace literal numbers with meaningful named constants."},
+  {"category": "Clean Code", "tip": "Return early to reduce nested if/else indentation (Guard Clause pattern)."},
+  {"category": "Clean Code", "tip": "Don't comment on 'what' the code does; comment on 'why' it was done that way."},
+  {"category": "Python", "tip": "Use dict.get('key', default) instead of direct indexing to avoid KeyError exceptions."},
+  {"category": "Python", "tip": "Use enumerate() instead of range(len(items)) when you need both index and element."},
+  {"category": "Python", "tip": "Leverage context managers (with open(...) as f:) to guarantee resource cleanup."},
+  {"category": "Python", "tip": "Use collections.defaultdict to avoid checking if keys exist before appending values."},
+  {"category": "Python", "tip": "Use list and dict comprehensions for concise, readable data transformations."},
+  {"category": "Python", "tip": "Use type hints (typing / def func(x: int) -> str) to catch bugs early in IDEs."},
+  {"category": "JavaScript / TypeScript", "tip": "Use optional chaining (user?.profile?.avatar) to prevent undefined crashes."},
+  {"category": "JavaScript / TypeScript", "tip": "Use nullish coalescing (val ?? 'default') instead of || to allow empty strings or 0."},
+  {"category": "JavaScript / TypeScript", "tip": "Prefer 'const' by default, 'let' only when reassignment is needed, never 'var'."},
+  {"category": "JavaScript / TypeScript", "tip": "Use Promise.allSettled() when running multiple promises where you care about all results."},
+  {"category": "JavaScript / TypeScript", "tip": "Use structuredClone() for deep copying objects without JSON serialization hacks."},
+  {"category": "JavaScript / TypeScript", "tip": "Avoid 'any' in TypeScript; use 'unknown' when the type is truly dynamic."},
+  {"category": "React & Next.js", "tip": "Always pass key props to mapped list items based on stable IDs, not array indices."},
+  {"category": "React & Next.js", "tip": "Keep component state as close as possible to where it is used to avoid unnecessary rerenders."},
+  {"category": "React & Next.js", "tip": "Use React Server Components for heavy server-only dependencies and data fetching."},
+  {"category": "React & Next.js", "tip": "Use next/image for automatic image optimization, WebP conversion, and lazy loading."},
+  {"category": "React & Next.js", "tip": "Clean up useEffect listeners, timers, or abort controllers in the return cleanup function."},
+  {"category": "DevOps & Docker", "tip": "Order Dockerfile commands from least to most frequently changed to maximize layer cache."},
+  {"category": "DevOps & Docker", "tip": "Use multi-stage Docker builds to keep production container images tiny and secure."},
+  {"category": "DevOps & Docker", "tip": "Never run container applications as root; specify 'USER node' or 'USER nonroot'."},
+  {"category": "DevOps & Docker", "tip": "Always pin base image versions (e.g. node:20-alpine instead of node:latest)."},
+  {"category": "DevOps & Docker", "tip": "Use .dockerignore to exclude node_modules, git histories, and local secrets from images."},
+  {"category": "Performance", "tip": "Premature optimization is the root of all evil. Profile actual bottlenecks before optimizing."},
+  {"category": "Performance", "tip": "Enable HTTP/2 or HTTP/3 and Brotli/Gzip compression on your production servers."},
+  {"category": "Performance", "tip": "Debounce rapid user inputs (search bars, resize handlers) to reduce CPU cycles."},
+  {"category": "Performance", "tip": "Implement pagination or infinite scroll instead of loading thousands of records at once."},
+  {"category": "Performance", "tip": "Leverage Redis or in-memory caches for expensive database queries with high read ratios."},
+  {"category": "Security", "tip": "Never commit secrets, tokens, or .env files to source control. Always .gitignore them."},
+  {"category": "Security", "tip": "Always sanitize and validate user input on both client and server sides."},
+  {"category": "Security", "tip": "Store passwords using Argon2id or bcrypt with high work factors, never plain SHA/MD5."},
+  {"category": "Security", "tip": "Set Content-Security-Policy (CSP) headers to prevent Cross-Site Scripting (XSS)."},
+  {"category": "Database & SQL", "tip": "Avoid 'SELECT *' in production queries; request only the columns you actually use."},
+  {"category": "Database & SQL", "tip": "Add indexes on columns frequently used in WHERE, JOIN, and ORDER BY clauses."},
+  {"category": "Database & SQL", "tip": "Use database transactions (BEGIN/COMMIT) for multi-step data mutations to ensure consistency."},
+  {"category": "Database & SQL", "tip": "Use connection pools instead of opening a brand new database connection on every request."},
+  {"category": "Linux & Bash", "tip": "Use Ctrl + R in your terminal to search backwards through command history quickly."},
+  {"category": "Linux & Bash", "tip": "Use 'htop' or 'btop' instead of plain 'top' for visual system resource monitoring."},
+  {"category": "Linux & Bash", "tip": "Use 'set -e' (or set -euo pipefail) in bash scripts to fail immediately on errors."},
+  {"category": "Web Architecture", "tip": "Design APIs to be idempotent: retrying a failed network request should be safe."},
+  {"category": "Web Architecture", "tip": "Aim for high cohesion and loose coupling between system microservices and modules."}
 ]
