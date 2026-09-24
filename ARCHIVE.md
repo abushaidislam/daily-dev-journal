@@ -45,3 +45,10 @@ All historical daily updates recorded automatically.
 - **Quote:** *"There cannot be self-restraint in the absence of desire: when there is no adversary, what avails thy courage? Hark, do not castrate thyself, do not become a monk: chastity depends on the existence of lust."* — Rumi
 
 ---
+
+### 🗓️ 2026-09-24 09:34:31 PM BST
+- **Category:** `JavaScript / TypeScript`
+- **Tip:** Use Optional Chaining (`user?.profile?.avatar`) and Nullish Coalescing (`value ?? 'default'`) to prevent 'undefined is not an object' runtime crashes.
+- **Quote:** *"It's not bragging if you can back it up."* — Muhammad Ali
+
+---

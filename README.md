@@ -5,14 +5,14 @@
 
 [![Auto Update](https://github.com/abushaidislam/daily-dev-journal/actions/workflows/daily_update.yml/badge.svg)](https://github.com/abushaidislam/daily-dev-journal/actions)
 [![Last Updated](https://img.shields.io/badge/Last_Updated-2026--09--24-brightgreen.svg?style=flat-square&logo=github)](https://github.com)
-[![Total Entries](https://img.shields.io/badge/Total_Entries-6-blueviolet.svg?style=flat-square&logo=git)](ARCHIVE.md)
+[![Total Entries](https://img.shields.io/badge/Total_Entries-7-blueviolet.svg?style=flat-square&logo=git)](ARCHIVE.md)
 [![Frequency](https://img.shields.io/badge/Frequency-10+_Commits_Daily-orange.svg?style=flat-square)](https://github.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
 
 ---
 
 ### 📅 Current Edition: `September 24, 2026`
-*Last synced: **09:34:27 PM BST** (03:34:27 PM UTC) | Entry #6*
+*Last synced: **09:34:31 PM BST** (03:34:31 PM UTC) | Entry #7*
 
 ```mermaid
 flowchart LR
@@ -25,15 +25,15 @@ flowchart LR
 ---
 
 ### 💡 Tip of the Moment
-> **Category:** `Architecture`  
+> **Category:** `JavaScript / TypeScript`  
 > **Insight:**  
-> High cohesion and loose coupling: Modules should do one thing well with minimal dependencies on other modules.
+> Use Optional Chaining (`user?.profile?.avatar`) and Nullish Coalescing (`value ?? 'default'`) to prevent 'undefined is not an object' runtime crashes.
 
 ---
 
 ### 💬 Quote of the Moment
-> *" There cannot be self-restraint in the absence of desire: when there is no adversary, what avails thy courage? Hark, do not castrate thyself, do not become a monk: chastity depends on the existence of lust. "*  
-> — **Rumi**
+> *" It's not bragging if you can back it up. "*  
+> — **Muhammad Ali**
 
 ---
 
