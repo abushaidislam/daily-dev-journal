@@ -195,8 +195,8 @@ class DungeonGenerator:
                 enemy_type = random.choice(["goblin", "skeleton", "shadow_beast"])
                 stats = {
                     "goblin": {"hp": 2, "atk": 1, "icon": "👾"},
-                    "skeleton": {"hp": 3, "atk": 2, "icon": "💀"},
-                    "shadow_beast": {"hp": 5, "atk": 3, "icon": "🐉"}
+                    "skeleton": {"hp": 3, "atk": 1, "icon": "💀"},
+                    "shadow_beast": {"hp": 4, "atk": 2, "icon": "🐉"}
                 }[enemy_type]
                 self.entities.append({
                     "id": f"enemy_{i+1}",
@@ -223,7 +223,7 @@ class DungeonGenerator:
                 occupied_tiles.add((rx, ry))
 
         # Health Potions
-        for i in range(random.randint(2, 3)):
+        for i in range(random.randint(3, 4)):
             room = random.choice(self.rooms)
             rx = random.randint(room.x1 + 1, room.x2 - 1)
             ry = random.randint(room.y1 + 1, room.y2 - 1)
@@ -232,7 +232,7 @@ class DungeonGenerator:
                     "id": f"potion_{i+1}",
                     "type": "health_potion",
                     "x": rx, "y": ry,
-                    "heal": 3,
+                    "heal": 4,
                     "icon": "🧪"
                 })
                 occupied_tiles.add((rx, ry))

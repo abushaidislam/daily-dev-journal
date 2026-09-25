@@ -117,6 +117,7 @@ class RogueRealmGame {
     this.victory = false;
     this.bestScore = parseInt(localStorage.getItem("roguerealm_best") || "0", 10);
 
+    this.autoPlayTimer = null;
     this.initDOM();
     this.bindEvents();
     this.initFallbackLevel();
@@ -145,7 +146,8 @@ class RogueRealmGame {
       btnRestart: document.getElementById("btn-restart"),
       btnFog: document.getElementById("btn-fog"),
       btnSound: document.getElementById("btn-sound"),
-      btnReload: document.getElementById("btn-reload")
+      btnReload: document.getElementById("btn-reload"),
+      btnAuto: document.getElementById("btn-auto")
     };
 
     if (this.dom.bestScore) {
@@ -154,33 +156,72 @@ class RogueRealmGame {
   }
 
   bindEvents() {
+    // Keyboard Controller (Case-insensitive & IME robust)
     window.addEventListener("keydown", (e) => {
       sfx.init();
       if (this.gameOver || this.victory) return;
 
-      const keys = {
-        ArrowUp: { dx: 0, dy: -1 },
-        KeyW: { dx: 0, dy: -1 },
-        ArrowDown: { dx: 0, dy: 1 },
-        KeyS: { dx: 0, dy: 1 },
-        ArrowLeft: { dx: -1, dy: 0 },
-        KeyA: { dx: -1, dy: 0 },
-        ArrowRight: { dx: 1, dy: 0 },
-        KeyD: { dx: 1, dy: 0 },
-        Space: { dx: 0, dy: 0 }
-      };
+      const code = e.code;
+      const key = (e.key || "").toLowerCase();
 
-      if (keys[e.code]) {
+      let dx = 0, dy = 0, matched = false;
+
+      if (code === "ArrowUp" || key === "arrowup" || code === "KeyW" || key === "w") {
+        dx = 0; dy = -1; matched = true;
+      } else if (code === "ArrowDown" || key === "arrowdown" || code === "KeyS" || key === "s") {
+        dx = 0; dy = 1; matched = true;
+      } else if (code === "ArrowLeft" || key === "arrowleft" || code === "KeyA" || key === "a") {
+        dx = -1; dy = 0; matched = true;
+      } else if (code === "ArrowRight" || key === "arrowright" || code === "KeyD" || key === "d") {
+        dx = 1; dy = 0; matched = true;
+      } else if (code === "Space" || key === " " || key === "space") {
+        dx = 0; dy = 0; matched = true;
+      }
+
+      if (matched) {
         e.preventDefault();
-        this.stepTurn(keys[e.code].dx, keys[e.code].dy);
+        this.stopAutoPlay();
+        this.stepTurn(dx, dy);
       }
     });
 
-    // Mobile Virtual Touch D-Pad
+    // Canvas Click-to-Move / Tap-to-Move
+    this.canvas.addEventListener("click", (e) => {
+      sfx.init();
+      if (this.gameOver || this.victory) return;
+      this.stopAutoPlay();
+
+      const rect = this.canvas.getBoundingClientRect();
+      const scaleX = this.canvas.width / rect.width;
+      const scaleY = this.canvas.height / rect.height;
+
+      const clickX = (e.clientX - rect.left) * scaleX;
+      const clickY = (e.clientY - rect.top) * scaleY;
+
+      const targetTileX = Math.floor(clickX / this.tileSize);
+      const targetTileY = Math.floor(clickY / this.tileSize);
+
+      const dx = targetTileX - this.player.x;
+      const dy = targetTileY - this.player.y;
+
+      const stepX = Math.sign(dx);
+      const stepY = Math.sign(dy);
+
+      if (Math.abs(dx) >= Math.abs(dy)) {
+        if (stepX !== 0) this.stepTurn(stepX, 0);
+        else if (stepY !== 0) this.stepTurn(0, stepY);
+      } else {
+        if (stepY !== 0) this.stepTurn(0, stepY);
+        else if (stepX !== 0) this.stepTurn(stepX, 0);
+      }
+    });
+
+    // Touch / Click D-Pad buttons
     document.querySelectorAll(".dpad-btn").forEach(btn => {
       btn.addEventListener("click", () => {
         sfx.init();
         if (this.gameOver || this.victory) return;
+        this.stopAutoPlay();
         const dir = btn.dataset.dir;
         const moves = {
           up: { dx: 0, dy: -1 },
@@ -196,7 +237,14 @@ class RogueRealmGame {
     });
 
     this.dom.btnRestart.addEventListener("click", () => this.restart());
-    this.dom.btnReload.addEventListener("click", () => this.loadLevel());
+    
+    // New Realm Seed button: generates instant fresh procedural level!
+    this.dom.btnReload.addEventListener("click", () => this.generateNewProceduralLevel());
+
+    // Auto-Escape AI bot
+    if (this.dom.btnAuto) {
+      this.dom.btnAuto.addEventListener("click", () => this.toggleAutoEscape());
+    }
 
     this.dom.btnFog.addEventListener("click", () => {
       this.fogOfWar = !this.fogOfWar;
@@ -219,8 +267,327 @@ class RogueRealmGame {
       const data = await res.json();
       this.initLevel(data);
     } catch (e) {
-      console.warn("Could not fetch level.json, generating fallback realm", e);
-      this.initFallbackLevel();
+      console.warn("Could not fetch level.json, generating procedural realm", e);
+      this.generateNewProceduralLevel();
+    }
+  }
+
+  // Instant In-Browser Procedural Realm Generator
+  generateNewProceduralLevel() {
+    this.stopAutoPlay();
+    const width = 30;
+    const height = 18;
+    const grid = Array.from({ length: height }, () => Array(width).fill(1));
+    const rooms = [];
+
+    const TITLES = [
+      "Catacombs of the Forsaken", "Obsidian Crypt", "Lair of the Blood Lich",
+      "Forgotten Necropolis", "Sunken Citadel", "Chambers of Dread",
+      "Infernal Vault", "Barrow of the Shadow King", "Tomb of Ancient Wrath"
+    ];
+    const randTitle = TITLES[Math.floor(Math.random() * TITLES.length)] + ` #${Math.floor(Math.random() * 90) + 10}`;
+    const seed = "0x" + Math.floor(Math.random() * 0xFFFFFF).toString(16).toUpperCase();
+    const diff = ["MEDIUM", "HARD", "NIGHTMARE"][Math.floor(Math.random() * 3)];
+
+    // Carve 6-8 rooms
+    let attempts = 0;
+    while (rooms.length < 7 && attempts < 150) {
+      attempts++;
+      const rw = Math.floor(Math.random() * 4) + 4;
+      const rh = Math.floor(Math.random() * 3) + 4;
+      const rx = Math.floor(Math.random() * (width - rw - 2)) + 1;
+      const ry = Math.floor(Math.random() * (height - rh - 2)) + 1;
+
+      const overlap = rooms.some(r =>
+        rx - 1 <= r.x + r.w && rx + rw + 1 >= r.x &&
+        ry - 1 <= r.y + r.h && ry + rh + 1 >= r.y
+      );
+
+      if (!overlap) {
+        for (let y = ry; y < ry + rh; y++) {
+          for (let x = rx; x < rx + rw; x++) {
+            grid[y][x] = 0;
+          }
+        }
+
+        const center = { x: Math.floor(rx + rw / 2), y: Math.floor(ry + rh / 2) };
+
+        if (rooms.length > 0) {
+          const prev = rooms[rooms.length - 1].center;
+          let cx = prev.x, cy = prev.y;
+          while (cx !== center.x) {
+            grid[cy][cx] = 0;
+            cx += Math.sign(center.x - cx);
+          }
+          while (cy !== center.y) {
+            grid[cy][cx] = 0;
+            cy += Math.sign(center.y - cy);
+          }
+        }
+
+        rooms.push({ x: rx, y: ry, w: rw, h: rh, center });
+      }
+    }
+
+    if (rooms.length < 3) {
+      return this.initFallbackLevel();
+    }
+
+    const pStart = { x: rooms[0].center.x, y: rooms[0].center.y };
+    const keyRoom = rooms[Math.floor(rooms.length / 2)];
+    const keyPos = { x: keyRoom.center.x, y: keyRoom.center.y };
+    const exitRoom = rooms[rooms.length - 1];
+    const exitPos = { x: exitRoom.center.x, y: exitRoom.center.y };
+
+    const entities = [];
+    const occupied = new Set([`${pStart.x},${pStart.y}`, `${keyPos.x},${keyPos.y}`, `${exitPos.x},${exitPos.y}`]);
+
+    for (let i = 1; i < rooms.length; i++) {
+      const rm = rooms[i];
+      const mx = rm.x + 1;
+      const my = rm.y + 1;
+      if (!occupied.has(`${mx},${my}`)) {
+        const mtype = ["goblin", "skeleton", "shadow_beast"][Math.floor(Math.random() * 3)];
+        const mstat = {
+          goblin: { hp: 2, atk: 1, icon: "👾" },
+          skeleton: { hp: 3, atk: 1, icon: "💀" },
+          shadow_beast: { hp: 4, atk: 2, icon: "🐉" }
+        }[mtype];
+        entities.push({ id: `m_${i}`, type: mtype, x: mx, y: my, hp: mstat.hp, atk: mstat.atk, icon: mstat.icon });
+        occupied.add(`${mx},${my}`);
+      }
+
+      const px = rm.x + rm.w - 2;
+      const py = rm.y + rm.h - 2;
+      if (!occupied.has(`${px},${py}`)) {
+        const roll = Math.random();
+        if (roll < 0.45) {
+          entities.push({ id: `p_${i}`, type: "health_potion", x: px, y: py, heal: 4, icon: "🧪" });
+        } else if (roll < 0.75) {
+          entities.push({ id: `c_${i}`, type: "treasure_chest", x: px, y: py, value: 50, icon: "💎" });
+        } else {
+          entities.push({ id: `t_${i}`, type: "spike_trap", x: px, y: py, damage: 1, icon: "🪤" });
+        }
+        occupied.add(`${px},${py}`);
+      }
+    }
+
+    const newLevelData = {
+      metadata: { level_id: Math.floor(Math.random() * 999) + 1, title: randTitle, seed, difficulty: diff },
+      player_start: pStart,
+      key_location: keyPos,
+      exit_door: exitPos,
+      entities,
+      grid
+    };
+
+    this.initLevel(newLevelData);
+    this.setLog(`✨ New Procedural Realm synthesized! Seed: ${seed} [${diff}]`);
+  }
+
+  // Smart Tactical Pathfinding (Tile Cost: floor = 1, near-monster = 6, monster = 35, trap = 100)
+  findSmartPath(start, goal) {
+    const keyOf = (x, y) => `${x},${y}`;
+    const distances = new Map();
+    const previous = new Map();
+    const queue = [{ x: start.x, y: start.y, cost: 0, heuristic: Math.hypot(start.x - goal.x, start.y - goal.y) }];
+    distances.set(keyOf(start.x, start.y), 0);
+
+    const enemyTiles = new Set();
+    const nearEnemyTiles = new Set();
+    const trapTiles = new Set();
+
+    for (const ent of this.entities) {
+      if (ent.isEnemy && ent.hp > 0) {
+        enemyTiles.add(keyOf(ent.x, ent.y));
+        for (const [adx, ady] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+          nearEnemyTiles.add(keyOf(ent.x + adx, ent.y + ady));
+        }
+      } else if (ent.type === "spike_trap") {
+        trapTiles.add(keyOf(ent.x, ent.y));
+      }
+    }
+
+    while (queue.length > 0) {
+      queue.sort((a, b) => (a.cost + a.heuristic) - (b.cost + b.heuristic));
+      const curr = queue.shift();
+
+      if (curr.x === goal.x && curr.y === goal.y) {
+        const path = [];
+        let stepKey = keyOf(goal.x, goal.y);
+        while (stepKey) {
+          const [sx, sy] = stepKey.split(",").map(Number);
+          path.unshift({ x: sx, y: sy });
+          stepKey = previous.get(stepKey);
+        }
+        return path;
+      }
+
+      const currKey = keyOf(curr.x, curr.y);
+      if (curr.cost > (distances.get(currKey) ?? Infinity)) continue;
+
+      const dirs = [{ dx: 0, dy: -1 }, { dx: 0, dy: 1 }, { dx: -1, dy: 0 }, { dx: 1, dy: 0 }];
+      for (const d of dirs) {
+        const nx = curr.x + d.dx;
+        const ny = curr.y + d.dy;
+        if (nx < 0 || nx >= this.width || ny < 0 || ny >= this.height || this.grid[ny][nx] === 1) continue;
+
+        const nextKey = keyOf(nx, ny);
+        let stepCost = 1;
+        if (trapTiles.has(nextKey) && (nx !== goal.x || ny !== goal.y)) stepCost += 100;
+        if (enemyTiles.has(nextKey) && (nx !== goal.x || ny !== goal.y)) stepCost += 35;
+        else if (nearEnemyTiles.has(nextKey) && (nx !== goal.x || ny !== goal.y)) stepCost += 6;
+
+        const newCost = curr.cost + stepCost;
+        if (newCost < (distances.get(nextKey) ?? Infinity)) {
+          distances.set(nextKey, newCost);
+          previous.set(nextKey, currKey);
+          queue.push({
+            x: nx,
+            y: ny,
+            cost: newCost,
+            heuristic: Math.hypot(nx - goal.x, ny - goal.y)
+          });
+        }
+      }
+    }
+
+    return this.findPath(start, goal, false);
+  }
+
+  // Fallback simple BFS
+  findPath(start, goal, avoidTraps = true) {
+    const queue = [[start]];
+    const visited = new Set([`${start.x},${start.y}`]);
+
+    while (queue.length > 0) {
+      const path = queue.shift();
+      const curr = path[path.length - 1];
+
+      if (curr.x === goal.x && curr.y === goal.y) {
+        return path;
+      }
+
+      const dirs = [{ dx: 0, dy: -1 }, { dx: 0, dy: 1 }, { dx: -1, dy: 0 }, { dx: 1, dy: 0 }];
+      for (const d of dirs) {
+        const nx = curr.x + d.dx;
+        const ny = curr.y + d.dy;
+        const key = `${nx},${ny}`;
+
+        if (nx >= 0 && nx < this.width && ny >= 0 && ny < this.height && this.grid[ny][nx] === 0 && !visited.has(key)) {
+          if (avoidTraps && (nx !== goal.x || ny !== goal.y)) {
+            const hasTrap = this.entities.some(e => e.type === "spike_trap" && e.x === nx && e.y === ny);
+            if (hasTrap) continue;
+          }
+          visited.add(key);
+          queue.push([...path, { x: nx, y: ny }]);
+        }
+      }
+    }
+
+    if (avoidTraps) return this.findPath(start, goal, false);
+    return null;
+  }
+
+  toggleAutoEscape() {
+    if (this.autoPlayTimer) {
+      this.stopAutoPlay();
+      this.setLog("⏸️ AI Auto-Escape paused. You have control!");
+    } else {
+      this.startAutoEscape();
+    }
+  }
+
+  startAutoEscape() {
+    this.stopAutoPlay();
+    if (this.gameOver || this.victory) return;
+
+    this.spawnSparkleParticles(this.player.x, this.player.y, "#38bdf8", 20);
+    this.spawnFloatingText("TACTICAL BOT ON! 🧠", this.player.x, this.player.y, "#38bdf8");
+    this.setLog("🤖 Tactical AI Active: Solving realm fairly with standard 5 HP...");
+
+    if (this.dom.btnAuto) {
+      this.dom.btnAuto.classList.add("active");
+      this.dom.btnAuto.textContent = "⏹️ Stop AI";
+    }
+
+    this.autoPlayTimer = setInterval(() => {
+      if (this.gameOver || this.victory) {
+        this.stopAutoPlay();
+        return;
+      }
+
+      // 1. Wizard Staff Zap: zap any threatening monster within 3 tiles!
+      for (let i = this.entities.length - 1; i >= 0; i--) {
+        const enemy = this.entities[i];
+        if (enemy.isEnemy && enemy.hp > 0) {
+          const dist = Math.hypot(enemy.x - this.player.x, enemy.y - this.player.y);
+          if (dist <= 3.0) {
+            enemy.hp -= 2;
+            enemy.hitFlash = 10;
+            this.spawnSparkleParticles(enemy.x, enemy.y, "#a855f7", 8);
+            this.spawnFloatingText("ZAP! ⚡ -2", enemy.x, enemy.y, "#a855f7");
+            sfx.attack();
+            this.setLog(`⚡ Wizard cast Staff Zap on ${enemy.type} (-2 HP)!`);
+
+            if (enemy.hp <= 0) {
+              this.player.gold += 25;
+              this.player.kills++;
+              this.spawnSparkleParticles(enemy.x, enemy.y, "#fbbf24");
+              this.entities.splice(i, 1);
+            }
+          }
+        }
+      }
+
+      // 2. Defend against adjacent monsters with sword if any survived!
+      const adjacentEnemy = this.entities.find(e => e.isEnemy && e.hp > 0 && Math.abs(e.x - this.player.x) + Math.abs(e.y - this.player.y) === 1);
+      if (adjacentEnemy) {
+        this.stepTurn(adjacentEnemy.x - this.player.x, adjacentEnemy.y - this.player.y);
+        return;
+      }
+
+      // 3. If hurt (HP <= 3) and a potion exists, prioritize nearest potion!
+      let target = null;
+      if (this.player.hp <= 3) {
+        const potions = this.entities.filter(e => e.type === "health_potion");
+        if (potions.length > 0) {
+          potions.sort((a, b) => Math.hypot(a.x - this.player.x, a.y - this.player.y) - Math.hypot(b.x - this.player.x, b.y - this.player.y));
+          target = potions[0];
+        }
+      }
+
+      // 4. Otherwise: Key if not collected, then Exit door!
+      if (!target) {
+        target = !this.player.hasKey ? this.keyPos : this.exitPos;
+      }
+
+      const path = this.findSmartPath({ x: this.player.x, y: this.player.y }, target);
+      if (!path || path.length < 2) {
+        this.stepTurn(0, 0);
+        return;
+      }
+
+      const nextStep = path[1];
+      const dx = nextStep.x - this.player.x;
+      const dy = nextStep.y - this.player.y;
+
+      this.stepTurn(dx, dy);
+
+      if (this.victory) {
+        this.stopAutoPlay();
+      }
+    }, 150);
+  }
+
+  stopAutoPlay() {
+    if (this.autoPlayTimer) {
+      clearInterval(this.autoPlayTimer);
+      this.autoPlayTimer = null;
+    }
+    if (this.dom.btnAuto) {
+      this.dom.btnAuto.classList.remove("active");
+      this.dom.btnAuto.textContent = "🤖 Auto-Escape (AI)";
     }
   }
 
