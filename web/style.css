@@ -96,6 +96,25 @@ body {
 .badge.medium { background: var(--accent-gold); color: #000; box-shadow: 0 0 12px rgba(251, 191, 36, 0.4); }
 .badge.hard { background: #f97316; color: #fff; box-shadow: 0 0 12px rgba(249, 115, 22, 0.4); }
 .badge.nightmare { background: var(--accent-red); color: #fff; box-shadow: 0 0 14px rgba(244, 63, 94, 0.5); }
+.badge.inferno { background: #dc2626; color: #fff; box-shadow: 0 0 16px rgba(220, 38, 38, 0.7); }
+.badge.floor-badge {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.5);
+  font-weight: 800;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.stat-box.floor-stat-box {
+  background: rgba(99, 102, 241, 0.08);
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+.stat-val.floor-val {
+  color: #c4b5fd;
+  font-weight: 800;
+  text-shadow: 0 0 8px rgba(167, 139, 250, 0.5);
+}
 
 .hud-right {
   display: flex;

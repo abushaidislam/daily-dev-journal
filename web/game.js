@@ -115,6 +115,7 @@ class RogueRealmGame {
 
     this.gameOver = false;
     this.victory = false;
+    this.currentFloor = 1;
     this.bestScore = parseInt(localStorage.getItem("roguerealm_best") || "0", 10);
 
     this.autoPlayTimer = null;
@@ -130,6 +131,8 @@ class RogueRealmGame {
 
   initDOM() {
     this.dom = {
+      floorBadge: document.getElementById("floor-badge"),
+      floorDisplay: document.getElementById("floor-display"),
       levelTitle: document.getElementById("level-title"),
       diffBadge: document.getElementById("diff-badge"),
       hpDisplay: document.getElementById("hp-display"),
@@ -238,8 +241,10 @@ class RogueRealmGame {
 
     this.dom.btnRestart.addEventListener("click", () => this.restart());
     
-    // New Realm Seed button: generates instant fresh procedural level!
-    this.dom.btnReload.addEventListener("click", () => this.generateNewProceduralLevel());
+    // New Realm Seed button: generates instant fresh procedural level for current floor!
+    this.dom.btnReload.addEventListener("click", () => {
+      this.generateNewProceduralLevel(this.currentFloor, this.player ? this.player.gold : 0);
+    });
 
     // Auto-Escape AI bot
     if (this.dom.btnAuto) {
@@ -265,16 +270,24 @@ class RogueRealmGame {
       const res = await fetch("level.json?t=" + Date.now());
       if (!res.ok) throw new Error("Fetch failed");
       const data = await res.json();
-      this.initLevel(data);
+      this.currentFloor = 1;
+      this.initLevel(data, 0);
     } catch (e) {
       console.warn("Could not fetch level.json, generating procedural realm", e);
-      this.generateNewProceduralLevel();
+      this.currentFloor = 1;
+      this.generateNewProceduralLevel(1, 0);
     }
   }
 
   // Instant In-Browser Procedural Realm Generator
-  generateNewProceduralLevel() {
+  generateNewProceduralLevel(targetFloor = null, preserveGold = null) {
     this.stopAutoPlay();
+    if (targetFloor !== null) {
+      this.currentFloor = targetFloor;
+    } else {
+      this.currentFloor = this.currentFloor || 1;
+    }
+    const floor = this.currentFloor;
     const width = 30;
     const height = 18;
     const grid = Array.from({ length: height }, () => Array(width).fill(1));
@@ -283,11 +296,17 @@ class RogueRealmGame {
     const TITLES = [
       "Catacombs of the Forsaken", "Obsidian Crypt", "Lair of the Blood Lich",
       "Forgotten Necropolis", "Sunken Citadel", "Chambers of Dread",
-      "Infernal Vault", "Barrow of the Shadow King", "Tomb of Ancient Wrath"
+      "Infernal Vault", "Barrow of the Shadow King", "Tomb of Ancient Wrath",
+      "Sanctum of the Nether Wyrm", "Abyssal Keep", "Halls of Eternal Torment"
     ];
     const randTitle = TITLES[Math.floor(Math.random() * TITLES.length)] + ` #${Math.floor(Math.random() * 90) + 10}`;
     const seed = "0x" + Math.floor(Math.random() * 0xFFFFFF).toString(16).toUpperCase();
-    const diff = ["MEDIUM", "HARD", "NIGHTMARE"][Math.floor(Math.random() * 3)];
+    
+    // Scale difficulty with floor
+    let diff = "MEDIUM";
+    if (floor === 2) diff = "HARD";
+    else if (floor === 3) diff = "NIGHTMARE";
+    else if (floor >= 4) diff = "INFERNO";
 
     // Carve 6-8 rooms
     let attempts = 0;
@@ -362,9 +381,9 @@ class RogueRealmGame {
       if (!occupied.has(`${px},${py}`)) {
         const roll = Math.random();
         if (roll < 0.45) {
-          entities.push({ id: `p_${i}`, type: "health_potion", x: px, y: py, heal: 4, icon: "🧪" });
+          entities.push({ id: `p_${i}`, type: "health_potion", x: px, y: py, heal: 3, icon: "🧪" });
         } else if (roll < 0.75) {
-          entities.push({ id: `c_${i}`, type: "treasure_chest", x: px, y: py, value: 50, icon: "💎" });
+          entities.push({ id: `c_${i}`, type: "treasure_chest", x: px, y: py, value: 50 + (floor - 1) * 15, icon: "💎" });
         } else {
           entities.push({ id: `t_${i}`, type: "spike_trap", x: px, y: py, damage: 1, icon: "🪤" });
         }
@@ -373,7 +392,13 @@ class RogueRealmGame {
     }
 
     const newLevelData = {
-      metadata: { level_id: Math.floor(Math.random() * 999) + 1, title: randTitle, seed, difficulty: diff },
+      metadata: { 
+        level_id: floor, 
+        floor_number: floor, 
+        title: randTitle, 
+        seed, 
+        difficulty: diff 
+      },
       player_start: pStart,
       key_location: keyPos,
       exit_door: exitPos,
@@ -381,8 +406,9 @@ class RogueRealmGame {
       grid
     };
 
-    this.initLevel(newLevelData);
-    this.setLog(`✨ New Procedural Realm synthesized! Seed: ${seed} [${diff}]`);
+    const goldToKeep = preserveGold !== null ? preserveGold : (this.player ? this.player.gold : 0);
+    this.initLevel(newLevelData, goldToKeep);
+    this.setLog(`✨ Level ${floor} synthesized! Seed: ${seed} [${diff}]`);
   }
 
   // Smart Tactical Pathfinding (Tile Cost: floor = 1, near-monster = 6, monster = 35, trap = 100)
@@ -591,7 +617,7 @@ class RogueRealmGame {
     }
   }
 
-  initLevel(data) {
+  initLevel(data, preserveGold = null) {
     this.levelData = data;
     this.grid = data.grid;
     this.height = this.grid.length;
@@ -613,7 +639,7 @@ class RogueRealmGame {
     this.player.hp = 5;
     this.player.maxHp = 5;
     this.player.hasKey = false;
-    this.player.gold = 0;
+    this.player.gold = preserveGold !== null ? preserveGold : 0;
     this.player.turns = 0;
     this.player.kills = 0;
     this.player.hitFlash = 0;
@@ -646,14 +672,20 @@ class RogueRealmGame {
     this.dom.overlay.classList.add("hidden");
 
     // UI Updates
-    const meta = data.metadata;
-    this.dom.levelTitle.textContent = `${meta.title} (Seed: ${meta.seed})`;
-    this.dom.diffBadge.textContent = meta.difficulty;
-    this.dom.diffBadge.className = `badge ${meta.difficulty.toLowerCase()}`;
+    const meta = data.metadata || {};
+    const floorNum = meta.floor_number || this.currentFloor || 1;
+    this.currentFloor = floorNum;
+
+    if (this.dom.floorBadge) this.dom.floorBadge.textContent = `🏰 LEVEL ${this.currentFloor}`;
+    if (this.dom.floorDisplay) this.dom.floorDisplay.textContent = `🏰 LEVEL ${this.currentFloor}`;
+
+    this.dom.levelTitle.textContent = `Floor ${this.currentFloor} • ${meta.title || "Crypt of Shadows"} (Seed: ${meta.seed || "0x0"})`;
+    this.dom.diffBadge.textContent = meta.difficulty || "MEDIUM";
+    this.dom.diffBadge.className = `badge ${(meta.difficulty || "medium").toLowerCase()}`;
 
     this.computeFOV();
     this.updateHUD();
-    this.setLog("Realm materialized. Slay monsters, claim the key 🗝️, and reach the exit 🚪!");
+    this.setLog(`🏰 Level ${this.currentFloor} materialized! Claim the key 🗝️ and reach the exit gate 🚪!`);
   }
 
   initFallbackLevel() {
@@ -899,6 +931,7 @@ class RogueRealmGame {
 
   triggerVictory() {
     this.victory = true;
+    this.stopAutoPlay();
     sfx.win();
     this.spawnSparkleParticles(this.player.x, this.player.y, "#10b981", 40);
 
@@ -908,30 +941,45 @@ class RogueRealmGame {
       if (this.dom.bestScore) this.dom.bestScore.textContent = `🏆 ${this.bestScore}`;
     }
 
+    const nextFloor = (this.currentFloor || 1) + 1;
     this.dom.overlay.className = "overlay victory";
-    this.dom.overlayTitle.textContent = "🏆 REALM CONQUERED!";
-    this.dom.overlayMsg.textContent = "You unlocked the exit gate and conquered this procedural dungeon alive!";
+    this.dom.overlayTitle.textContent = `🏆 LEVEL ${this.currentFloor} CONQUERED!`;
+    this.dom.overlayMsg.textContent = `You unlocked the ancient exit gate and survived Level ${this.currentFloor}! Ready to descend deeper?`;
     this.dom.overlayTurns.textContent = this.player.turns;
     this.dom.overlayGold.textContent = this.player.gold;
-    this.setLog("🎉 VICTORY! Realm conquered in glorious fashion!");
+    if (this.dom.btnRestart) {
+      this.dom.btnRestart.textContent = `⚔️ Descend to Level ${nextFloor}`;
+    }
+    this.setLog(`🎉 VICTORY! Level ${this.currentFloor} conquered! Click "Descend to Level ${nextFloor}" to proceed.`);
   }
 
   triggerGameOver(cause) {
     this.gameOver = true;
+    this.stopAutoPlay();
     sfx.hurt();
     this.dom.overlay.className = "overlay gameover";
-    this.dom.overlayTitle.textContent = "💀 SLAIN IN BATTLE";
-    this.dom.overlayMsg.textContent = `${cause} Better luck in your next procedural descent!`;
+    this.dom.overlayTitle.textContent = `💀 SLAIN ON LEVEL ${this.currentFloor}`;
+    this.dom.overlayMsg.textContent = `${cause} You fell in battle on Level ${this.currentFloor}. Reincarnate and try again!`;
     this.dom.overlayTurns.textContent = this.player.turns;
     this.dom.overlayGold.textContent = this.player.gold;
-    this.setLog(`💀 GAME OVER: ${cause}`);
+    if (this.dom.btnRestart) {
+      this.dom.btnRestart.textContent = `🔄 Reincarnate (Level 1)`;
+    }
+    this.setLog(`💀 GAME OVER: ${cause} on Level ${this.currentFloor}`);
   }
 
   restart() {
-    if (this.levelData) {
-      this.initLevel(this.levelData);
+    if (this.victory) {
+      // Advance to Next Level!
+      const nextFloor = (this.currentFloor || 1) + 1;
+      const carriedGold = this.player.gold || 0;
+      this.generateNewProceduralLevel(nextFloor, carriedGold);
+      this.setLog(`🏰 Descended into Level ${nextFloor}! A deeper, more treacherous realm awaits.`);
     } else {
-      this.loadLevel();
+      // Game Over: Restart from Level 1
+      this.currentFloor = 1;
+      this.generateNewProceduralLevel(1, 0);
+      this.setLog(`⚔️ Reincarnated at Level 1! A fresh procedural realm has been forged.`);
     }
   }
 
@@ -949,6 +997,8 @@ class RogueRealmGame {
     this.dom.keyDisplay.style.color = this.player.hasKey ? "#fbbf24" : "#94a3b8";
     this.dom.goldDisplay.textContent = `💎 ${this.player.gold}`;
     this.dom.turnsDisplay.textContent = this.player.turns;
+    if (this.dom.floorBadge) this.dom.floorBadge.textContent = `🏰 LEVEL ${this.currentFloor || 1}`;
+    if (this.dom.floorDisplay) this.dom.floorDisplay.textContent = `🏰 LEVEL ${this.currentFloor || 1}`;
   }
 
   // Floating Combat & Loot Texts
